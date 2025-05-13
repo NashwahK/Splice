@@ -5,6 +5,7 @@ import pickle
 import nltk
 import pandas as pd
 import os
+import random
 from preprocessing import preprocess_message
 
 nltk.data.path.append('./nltk_data')
@@ -17,6 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Load models and vectorizer
 with open("model/naive_bayes_model.pkl", "rb") as f:
     nb_model = pickle.load(f)
 with open("model/svm_model.pkl", "rb") as f:
@@ -32,26 +34,22 @@ class ReportInput(BaseModel):
     message: str
     label: int
 
-
 @app.post("/predict")
 def predict(input: MessageInput):
-    cleaned = preprocess_message(input.message)  # Preprocess the message
-    vectorized = vectorizer.transform([cleaned])  # Vectorize the message
+    cleaned = preprocess_message(input.message)
+    vectorized = vectorizer.transform([cleaned])
     
-    # Naive Bayes prediction and confidence
     nb_pred = nb_model.predict(vectorized)[0]
-    nb_prob = nb_model.predict_proba(vectorized)[0][nb_pred] * 100  # Confidence percentage
+    nb_prob = nb_model.predict_proba(vectorized)[0][nb_pred] * 100
 
-    # SVM prediction and confidence
     svm_pred = svm_model.predict(vectorized)[0]
-    svm_prob = svm_model.predict_proba(vectorized)[0][svm_pred] * 100  # Confidence percentage
+    svm_prob = svm_model.predict_proba(vectorized)[0][svm_pred] * 100
 
-    # Return predictions and confidence
     return {
         "naive_bayes": "Spam" if nb_pred == 1 else "Ham",
-        "naive_bayes_confidence": f"{nb_prob:.2f}%",  # Confidence of Naive Bayes
+        "naive_bayes_confidence": f"{nb_prob:.2f}%",
         "svm": "Spam" if svm_pred == 1 else "Ham",
-        "svm_confidence": f"{svm_prob:.2f}%"  # Confidence of SVM
+        "svm_confidence": f"{svm_prob:.2f}%"
     }
 
 @app.post("/report")
@@ -71,3 +69,21 @@ def report_message(data: ReportInput):
 
     return {"success": True, "message": "Message reported successfully"}
 
+@app.get("/quiz-data")
+def get_quiz_data():
+    dataset_path = "data/spam_detection_dataset.csv"
+    if not os.path.isfile(dataset_path):
+        return {"error": "Dataset not found"}
+
+    df = pd.read_csv(dataset_path)
+
+    # Sample and clean
+    df = df.sample(n=20, random_state=random.randint(0, 9999))
+    df = df[["Message", "Label"]].rename(columns={"Message": "text", "Label": "trueLabel"})
+
+    # Convert int64 to int for JSON serialization
+    data = df.to_dict(orient="records")
+    for item in data:
+        item["trueLabel"] = int(item["trueLabel"])
+
+    return data
