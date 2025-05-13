@@ -1,0 +1,14 @@
+[
+  {
+    "text": "Congratulations! You've won a free iPhone. Click here to claim your prize.",
+    "modelPrediction": "spam"
+  },
+  {
+    "text": "Hey, just checking in about the meeting notes from yesterday.",
+    "modelPrediction": "ham"
+  },
+  {
+    "text": "Your Netflix account has been suspended. Log in to verify.",
+    "modelPrediction": "spam"
+  }
+]
