@@ -1,13 +1,14 @@
-# backend/preprocess.py
 import re
 import string
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
+nltk.data.path.append('./nltk_data')
+
+nltk.download('punkt', download_dir='./nltk_data')
+nltk.download('stopwords', download_dir='./nltk_data')
+nltk.download('wordnet', download_dir='./nltk_data')
 
 stop_words = set(stopwords.words("english"))
 lemmatizer = WordNetLemmatizer()

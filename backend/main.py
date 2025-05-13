@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import pickle
+import nltk
 from preprocessing import preprocess_message
 
+nltk.data.path.append('./nltk_data')
 app = FastAPI()
 
 # Load models and vectorizer
