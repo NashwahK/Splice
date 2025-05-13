@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pickle
 import nltk
@@ -6,8 +7,14 @@ from preprocessing import preprocess_message
 
 nltk.data.path.append('./nltk_data')
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# Load models and vectorizer
 with open("model/naive_bayes_model.pkl", "rb") as f:
     nb_model = pickle.load(f)
 with open("model/svm_model.pkl", "rb") as f:
