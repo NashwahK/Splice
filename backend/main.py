@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pickle
 import nltk
+import pandas as pd
+import os
 from preprocessing import preprocess_message
 
 nltk.data.path.append('./nltk_data')
@@ -25,6 +27,12 @@ with open("model/vectorizer.pkl", "rb") as f:
 class MessageInput(BaseModel):
     message: str
 
+class ReportInput(BaseModel):
+    category: str
+    message: str
+    label: int
+
+
 @app.post("/predict")
 def predict(input: MessageInput):
     cleaned = preprocess_message(input.message)  # Preprocess the message
@@ -45,3 +53,21 @@ def predict(input: MessageInput):
         "svm": "Spam" if svm_pred == 1 else "Ham",
         "svm_confidence": f"{svm_prob:.2f}%"  # Confidence of SVM
     }
+
+@app.post("/report")
+def report_message(data: ReportInput):
+    dataset_path = "data/spam_detection_dataset.csv"
+
+    new_entry = pd.DataFrame([{
+        "Category": data.category,
+        "Message": data.message,
+        "Label": data.label
+    }])
+
+    if not os.path.isfile(dataset_path):
+        new_entry.to_csv(dataset_path, index=False)
+    else:
+        new_entry.to_csv(dataset_path, mode="a", header=False, index=False)
+
+    return {"success": True, "message": "Message reported successfully"}
+
