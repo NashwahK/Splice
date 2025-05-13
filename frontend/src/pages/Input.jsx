@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaUserCircle } from "react-icons/fa";
+import { FaUserCircle, FaPaperPlane } from "react-icons/fa";
 
 const Input = () => {
   const [inputMessage, setInputMessage] = useState("");
@@ -11,22 +11,74 @@ const Input = () => {
     setInputMessage(e.target.value);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!inputMessage.trim()) return;
 
-    // Dummy prediction logic for spam or ham
-    const response = inputMessage.includes("offer") || inputMessage.length % 2 === 0 ? "SPAM" : "HAM";
-    const randomAccuracy = Math.floor(Math.random() * (95 - 70 + 1)) + 70; // Random accuracy between 70 and 95
+    const userMessage = inputMessage;
+    setInputMessage("");
 
-    setMessages([
-      ...messages,
-      { sender: "user", text: inputMessage },
-      { sender: "bot", text: `${response}`, accuracy: randomAccuracy },
+    setMessages((prev) => [
+      ...prev,
+      { sender: "user", text: userMessage }
     ]);
 
-    setPrediction(response);
-    setAccuracy(randomAccuracy);
+    try {
+      const res = await fetch("https://splice-production.up.railway.app/predict", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ message: userMessage })
+      });
+
+      const data = await res.json();
+
+      const botResponse = `
+        Naive Bayes: ${data.naive_bayes} (${data.naive_bayes_confidence})
+        SVM: ${data.svm} (${data.svm_confidence})
+      `;
+
+      setMessages((prev) => [
+        ...prev,
+        { sender: "bot", text: botResponse }
+      ]);
+    } catch (err) {
+      console.error("Error fetching prediction:", err);
+      setMessages((prev) => [
+        ...prev,
+        { sender: "bot", text: "Error fetching prediction. Please try again." }
+      ]);
+    }
+  };
+
+  const handleReport = async (category, label) => {
+    const userMessage = inputMessage;
     setInputMessage("");
+
+    try {
+      await fetch("https://splice-production.up.railway.app/report", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          category: category,
+          message: userMessage,
+          label: label
+        })
+      });
+
+      setMessages((prev) => [
+        ...prev,
+        { sender: "bot", text: `${category.charAt(0).toUpperCase() + category.slice(1)} reported successfully.` }
+      ]);
+    } catch (err) {
+      console.error("Error reporting message:", err);
+      setMessages((prev) => [
+        ...prev,
+        { sender: "bot", text: "Error reporting message. Please try again." }
+      ]);
+    }
   };
 
   return (
@@ -43,7 +95,7 @@ const Input = () => {
       </div>
 
       {/* Chat Messages */}
-      <div className="w-full max-w-2xl bg-zinc-900 p-6 rounded-lg shadow-lg mt-4 space-y-4 overflow-y-auto max-h-96 flex-1">
+      <div className="w-full bg-zinc-900 p-6 rounded-lg shadow-lg mt-4 space-y-4 overflow-y-auto max-h-96 flex-1">
         <div className="space-y-3">
           {messages.map((message, index) => (
             <div
@@ -51,36 +103,47 @@ const Input = () => {
               className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-xs px-4 py-2 rounded-lg ${
-                  message.sender === "user"
-                    ? "bg-[#B43BE3] text-white"
-                    : "bg-[#FBC334] text-black"
+                className={`max-w-xs px-4 py-2 rounded-lg shadow-md ${
+                  message.sender === "user" ? "bg-[#B43BE3] text-white" : "bg-[#FBC334] text-black"
                 }`}
               >
                 <p>{message.text}</p>
-                {message.sender === "bot" && (
-                  <p className="text-sm text-black-700 mt-1">Confidence: {message.accuracy}%</p>
-                )}
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Input Box and Submit Button */}
-      <div className="w-full max-w-2xl bg-zinc-900 p-4 rounded-b-lg shadow-md mt-4">
+      {/* Input Box and Buttons */}
+      <div className="w-full bg-zinc-900 p-4 rounded-b-lg shadow-md mt-4 flex items-center space-x-3">
         <textarea
           value={inputMessage}
           onChange={handleInputChange}
           placeholder="Type a message..."
           rows="3"
-          className="w-full p-3 border-2 border-gray-700 bg-black text-white rounded-lg mb-3"
+          className="w-full p-3 border-2 border-gray-700 bg-black text-white rounded-lg"
         />
         <button
           onClick={handleSubmit}
-          className="w-full bg-fuchsia-600 text-white py-2 rounded-lg hover:bg-fuchsia-700"
+          className="w-16 h-16 bg-fuchsia-600 text-white flex items-center justify-center rounded-full hover:bg-fuchsia-700 focus:outline-none transition"
         >
-          Send
+          <FaPaperPlane className="text-2xl" />
+        </button>
+      </div>
+
+      {/* Report Buttons */}
+      <div className="w-full flex justify-between mt-3 space-x-2">
+        <button
+          onClick={() => handleReport('spam', 1)}
+          className="w-full border-2 text-white py-2 rounded-lg hover:border-red-600 hover:text-red-600 transition"
+        >
+          Report as Spam
+        </button>
+        <button
+          onClick={() => handleReport('ham', 0)}
+          className="w-full border-2 text-white py-2 rounded-lg hover:bg-green-600 hover:text-green-600 transition"
+        >
+          Report as Ham
         </button>
       </div>
     </div>

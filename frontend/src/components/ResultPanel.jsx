@@ -1,45 +1,49 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const ResultPanel = ({ score }) => {
   const navigate = useNavigate();
-  const total = score.total || score.user + score.model;
+
+  const userScore = score?.user || 0;
+  const naiveScore = score?.naive || 0;
+  const svmScore = score?.svm || 0;
 
   const handleRestart = () => {
-    navigate('/'); // go home first
-    setTimeout(() => navigate('/quiz'), 0); // then go to quiz again — this forces remount
+    navigate('/');
+    setTimeout(() => navigate('/quiz'), 0);
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white px-4">
-      <div className="bg-zinc-900 p-10 rounded-2xl shadow-2xl w-full max-w-md text-center space-y-6">
-        <h1 className="text-4xl font-extrabold text-fuchsia-400">Quiz Complete!</h1>
+    <div className="min-h-screen flex items-center justify-center bg-black text-white px-4">
+      <div className="bg-zinc-900 p-10 rounded-2xl shadow-lg w-full max-w-md text-center space-y-6 border border-zinc-800">
+        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-[#B43BE3] to-[#FBC334] bg-clip-text text-transparent">
+          Quiz Complete
+        </h1>
 
-        <div className="text-lg space-y-2">
+        <div className="text-lg space-y-3">
           <p>
-            You got <span className="text-green-400 font-bold">{score.user}</span> correct
+            <span className="text-zinc-400">Your Score:</span>{' '}
+            <span className="text-[#B43BE3] font-semibold">{userScore}</span>
           </p>
           <p>
-            The computer got <span className="text-yellow-400 font-bold">{score.model}</span> correct
+            <span className="text-zinc-400">Naive Bayes:</span>{' '}
+            <span className="text-[#FBC334] font-semibold">{naiveScore}</span>
           </p>
-          <p className="text-sm text-zinc-400">
-            Accuracy: <span className="text-white font-semibold">
-              {((score.user / total) * 100).toFixed(1)}%
-            </span>
+          <p>
+            <span className="text-zinc-400">SVM:</span>{' '}
+            <span className="text-[#D2749A] font-semibold">{svmScore}</span>
           </p>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 pt-4">
           <button
             onClick={handleRestart}
-            className="w-full bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-semibold py-2 px-4 rounded-full transition"
+            className="w-full bg-gradient-to-r from-[#B43BE3] to-[#FBC334] text-black font-bold py-2 px-4 rounded-full transition hover:brightness-110"
           >
             Try Again
           </button>
-
           <button
             onClick={() => navigate('/')}
-            className="text-sm text-zinc-400 underline hover:text-white"
+            className="text-sm text-zinc-500 underline hover:text-white transition"
           >
             Back to Home
           </button>
